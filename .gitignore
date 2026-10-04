@@ -1,5 +1,25 @@
+# Dependencies
 node_modules/
+
+# Environment / secrets
 .env
+.env.*
+!.env.example
+
+# Expo
+.expo/
+expo-env.d.ts
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+
+# Logs
+*.log
+
+# R / data files
 .RData
 .Rhistory

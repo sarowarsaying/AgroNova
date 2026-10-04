@@ -1,36 +1,85 @@
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { useColorScheme } from "react-native";
+import { Stack, router, usePathname } from "expo-router";
+import { onAuthStateChanged } from "firebase/auth";
+import { useEffect, useState } from "react";
 
-import { AnimatedSplashOverlay } from "@/components/animated-icon";
-import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
-
-SplashScreen.preventAutoHideAsync();
+import { auth } from "@/firebase";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const pathname = usePathname();
+
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [user, setUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setCheckingAuth(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (checkingAuth) {
+      return;
+    }
+
+    // If user is NOT logged in, protect private pages.
+    if (!user && pathname !== "/login" && pathname !== "/register") {
+      router.replace({
+        pathname: "/login",
+        params: {
+          redirect: pathname,
+        },
+      });
+
+      return;
+    }
+
+    // IMPORTANT:
+    // Do NOT redirect logged-in users away from /login here.
+    // login.tsx will handle the correct destination.
+  }, [user, checkingAuth, pathname]);
+
+  if (checkingAuth) {
+    return null;
+  }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
+    <Stack>
+      <Stack.Screen
+        name="index"
+        options={{
+          headerShown: false,
+        }}
+      />
 
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="login"
+        options={{
+          title: "Login",
+        }}
+      />
 
-        <Stack.Screen
-          name="report-problem"
-          options={{
-            title: "Report Crop Problem",
-          }}
-        />
+      <Stack.Screen
+        name="register"
+        options={{
+          title: "Create Account",
+        }}
+      />
 
-        <Stack.Screen
-          name="register"
-          options={{
-            title: "Create Account",
-          }}
-        />
-      </Stack>
-    </ThemeProvider>
+      <Stack.Screen
+        name="profile"
+        options={{
+          title: "My Profile",
+        }}
+      />
+      <Stack.Screen
+        name="problems"
+        options={{
+          title: "Crop Problems",
+        }}
+      />
+    </Stack>
   );
 }
